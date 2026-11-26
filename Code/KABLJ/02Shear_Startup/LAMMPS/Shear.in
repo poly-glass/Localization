@@ -1,0 +1,46 @@
+units           lj
+atom_style      full
+
+read_data       ../../01Equilibrium/Final.dat
+
+change_box      all triclinic
+
+neighbor        0.5 bin
+neigh_modify    every 3 delay 0
+
+pair_style      lj/cut 2.5
+pair_modify     shift yes
+pair_coeff      1 1 1.0 1.00 2.5
+pair_coeff      1 2 1.5 0.80 2.0
+pair_coeff      2 2 0.5 0.88 2.2
+
+print           "1e-05 0.005 10000000.0" file Basic.txt screen no
+
+velocity        all create 0.41 929587 dist gaussian mom yes loop all
+
+fix             1 all nvt/sllod temp 0.41 0.41 0.5
+fix             2 all deform 1 xy erate 1e-05 remap v
+
+timestep        0.005
+
+restart         20000000 Restart1.lmp Restart2.lmp
+
+thermo          20000000
+
+variable        Step equal "step"
+variable        Temp equal "temp"
+variable        Press equal "press"
+variable        Epair equal "epair"
+variable        PE equal "pe"
+variable        Etotal equal "etotal"
+variable        XY equal "xy"
+variable        Pxy  equal "pxy"
+variable        Pxz  equal "pxz"
+variable        Pyz  equal "pyz"
+variable        Pxx  equal "pxx"
+variable        Pyy  equal "pyy"
+variable        Pzz  equal "pzz"
+fix             3 all print 200000 "${Step} ${Temp} ${Press} ${Epair} ${PE} ${Etotal} ${XY}" file log.Thermo screen no title "step temp press epair pe etotal xy"
+fix             4 all print 2000 "${Step} ${Pxy} ${Pxz} ${Pyz} ${Pxx} ${Pyy} ${Pzz}" file log.Tensor screen no title "step pxy pxz pyz pxx pyy pzz"
+run             2000000000 upto
+write_data      Final.dat nocoeff

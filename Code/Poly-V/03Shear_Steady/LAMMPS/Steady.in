@@ -1,0 +1,72 @@
+units           lj
+atom_style      full
+special_bonds   fene
+
+box             tilt large
+
+read_restart    ../../02Shear_Startup/LAMMPS/Restart2.lmp
+
+reset_timestep  0
+
+neighbor        0.5 bin
+neigh_modify    every 3 delay 0
+
+pair_style      lj/cut 2.5
+pair_modify     shift yes
+pair_coeff      1 1 1.0 1.0 2.5
+
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+
+variable        Lx equal "lx"
+print           "" file Basic.txt screen no
+print           "8000 20 400" append Basic.txt screen no
+print           "" append Basic.txt screen no
+print           "${Lx}" append Basic.txt screen no
+print           "" append Basic.txt screen no
+print           "0.4 2000.0 0.04 200.0 0.005 25.0" append Basic.txt screen no
+print           "" append Basic.txt screen no
+print           "1e-05" append Basic.txt screen no
+
+fix             1 all nvt/sllod temp 0.32 0.32 0.5
+fix             2 all deform 1 xy erate 1e-05 remap v
+
+timestep        0.005
+
+restart         4000 Restart1.lmp Restart2.lmp
+
+thermo          4000
+
+variable        Step equal "step"
+variable        Temp equal "temp"
+variable        Press equal "press"
+variable        Epair equal "epair"
+variable        Ebond equal "ebond"
+variable        PE equal "pe"
+variable        XY equal "xy"
+variable        Pxy  equal "pxy"
+variable        Pxz  equal "pxz"
+variable        Pyz  equal "pyz"
+variable        Pxx  equal "pxx"
+variable        Pyy  equal "pyy"
+variable        Pzz  equal "pzz"
+fix             3 all print 40 "${Step} ${Temp} ${Press} ${Epair} ${Ebond} ${PE} ${XY}" file log.Thermo screen no title "step temp press epair ebond pe xy"
+fix             4 all print 1 "${Step} ${Pxy} ${Pxz} ${Pyz} ${Pxx} ${Pyy} ${Pzz}" file log.Tensor screen no title "step pxy pxz pyz pxx pyy pzz"
+dump            1 all dcd 80 CoordL.dcd
+dump_modify     1 flush yes unwrap yes
+run             400000 upto
+undump          1
+unfix           3
+unfix           4
+
+dump            2 all dcd 8 CoordM.dcd
+dump_modify     2 flush yes unwrap yes
+run             440000 upto
+undump          2
+
+dump            3 all dcd 1 CoordS.dcd
+dump_modify     3 flush yes unwrap yes
+run             445000 upto
+undump          3
+
+write_data      Final.dat nocoeff

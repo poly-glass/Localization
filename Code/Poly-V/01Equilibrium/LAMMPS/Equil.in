@@ -1,0 +1,60 @@
+units           lj
+atom_style      full
+special_bonds   fene
+
+read_data       Init.dat
+
+neighbor        0.5 bin
+neigh_modify    every 3 delay 0
+
+pair_style      lj/cut 2.5
+pair_modify     shift yes
+pair_coeff      1 1 1.0 1.0 2.5
+
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+
+variable        Lx equal "lx"
+print           "" file Basic.txt screen no
+print           "8000 20 400" append Basic.txt screen no
+print           "" append Basic.txt screen no
+print           "${Lx}" append Basic.txt screen no
+print           "" append Basic.txt screen no
+print           "200.0 1000000.0 4.0 20000.0 0.005 25.0" append Basic.txt screen no
+
+velocity        all create 0.32 477351 dist gaussian mom yes loop all
+
+fix             1 all nvt temp 0.32 0.32 0.5
+
+timestep        0.005
+
+restart         2000000 Restart1.lmp Restart2.lmp
+
+thermo          2000000
+
+run             200000000 upto
+
+variable        Step equal "step"
+variable        Temp equal "temp"
+variable        Press equal "press"
+variable        Epair equal "epair"
+variable        Ebond equal "ebond"
+variable        PE equal "pe"
+fix             3 all print 20000 "${Step} ${Temp} ${Press} ${Epair} ${Ebond} ${PE}" file log.Thermo screen no title "step temp press epair ebond pe"
+dump            1 all dcd 40000 CoordL.dcd
+dump_modify     1 flush yes unwrap yes
+run             400000000 upto
+undump          1
+unfix           3
+
+dump            2 all dcd 800 CoordM.dcd
+dump_modify     2 flush yes unwrap yes
+run             404000000 upto
+undump          2
+
+dump            3 all dcd 1 CoordS.dcd
+dump_modify     3 flush yes unwrap yes
+run             404005000 upto
+undump          3
+
+write_data      Final.dat nocoeff
